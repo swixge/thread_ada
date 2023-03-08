@@ -1,36 +1,63 @@
-with Ada.Text_IO;
+with Ada.Text_IO; use Ada.Text_IO;
 
 procedure Main is
 
-   can_stop : boolean := false;
+   can_stop : boolean := true;
    pragma Atomic(can_stop);
 
-   task type break_thread;
-   task type main_thread;
+   task type Stoper;
 
-   task body break_thread is
+   task type My_task is
+      entry Start (id : in Integer);
+      entry Finish (id, sum, count : out Integer);
+   end My_task;
+
+
+   task body Stoper is
    begin
       delay 15.0;
-      can_stop := true;
-   end break_thread;
+      can_stop := false;
+   end Stoper;
 
-   task body main_thread is
-      sum : Long_Long_Integer := 0;
+
+   task body My_task is
+      step : Integer := 2;
+      sum : Integer := 0;
+      i : Integer := 0;
+      id : integer;
+      count : Integer := 0;
    begin
-      loop
-         sum := sum + 1;
-         exit when can_stop;
+      accept Start (id : in Integer) do
+         My_task.id := id;
+      end Start;
+      while can_stop loop
+         sum := sum + i;
+         count := count + 1;
+         i := i + step;
       end loop;
-      delay 1.0;
+      accept Finish (id : out Integer; sum : out Integer; count : out Integer) do
+         id := My_task.id;
+         sum := My_task.sum;
+         count := My_task.count;
+      end Finish;
+   end My_task;
 
-      Ada.Text_IO.Put_Line(sum'Img);
-   end main_thread;
 
-   b1 : break_thread;
-   t1 : main_thread;
-   t2 : main_thread;
-   t3 : main_thread;
-   t4 : main_thread;
+   num_tasks : Integer := 4;
+   A : Array(1..num_tasks) of My_task;
+   id_array : Array(1..num_tasks) of integer;
+   count_array : Array(1..num_tasks) of integer;
+   sum_array : Array(1..num_tasks) of integer;
+
 begin
-   null;
+
+   for i in A'Range loop
+      A(i).Start(i);
+   end loop;
+
+   for i in A'Range loop
+      A(i).Finish(id_array(i), sum_array(i), count_array(i));
+      Put_Line(id_array(i)'Img & " " & sum_array(i)'Img & " " & count_array(i)'Img);
+   end loop;
+
 end Main;
