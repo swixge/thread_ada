@@ -1,7 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
 procedure Main is
-   num_thread :Integer := 5;
+   num_thread : Integer := 8;
    Can_stop : array (1..num_thread) of Boolean := (others => False);
    pragma Atomic(Can_stop);
 
@@ -19,10 +19,10 @@ procedure Main is
       id : Integer;
    begin
       accept Start_Stoper (Timer : in Duration; id : in Integer) do
-         begin
+
             Stoper.Timer := Timer;
             Stoper.id := id;
-         end;
+
       end Start_Stoper;
       delay Timer;
       Can_stop(id) := true;
@@ -35,10 +35,10 @@ procedure Main is
       id : Integer;
    begin
       accept Start (step : Long_Long_Integer; id : Integer) do
-         begin
+
             My_threads.step := step;
             My_threads.id := id;
-         end;
+
       end Start;
 
       loop
@@ -49,7 +49,7 @@ procedure Main is
        Put_Line(id'Img & " " & sum'Img & " " & count'Img);
    end My_threads;
 
-   Timers_array : array (1..num_thread) of Standard.Duration := (10.0, 5.0, 7.0, 2.0, 3.0);
+   Timers_array : array (1..num_thread) of Standard.Duration := (10.0, 5.0, 7.0, 8.0, 9.0, 11.0, 12.0, 7.0);
    Threads_array : array (1..num_thread) of My_threads;
    Stoper_array : array (1..num_thread) of Stoper;
 
