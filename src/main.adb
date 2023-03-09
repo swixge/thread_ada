@@ -1,24 +1,33 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
 procedure Main is
+   num_tasks : Integer := 4;
+   Can_stop : array (1..num_tasks) of Boolean := (others => true);
 
-   can_stop : boolean := true;
-   pragma Atomic(can_stop);
+   --can_stop : boolean := true;
+   pragma Atomic(Can_stop);
 
-   task type Stoper;
+   task type Stoper is
+      entry Start_Stoper (Timer : in Duration; id : in Integer);
+   end Stoper;
+
+   task body Stoper is
+      Timer : Duration;
+      id : integer;
+   begin
+      accept Start_Stoper (Timer : in Duration; id : in Integer) do
+         Stoper.Timer := Timer;
+         Stoper.id := id;
+      end Start_Stoper;
+      delay Timer;
+      Can_stop(id) := false;
+   end Stoper;
+
 
    task type My_task is
       entry Start (id : in Integer);
       entry Finish (id, sum, count : out Integer);
    end My_task;
-
-
-   task body Stoper is
-   begin
-      delay 15.0;
-      can_stop := false;
-   end Stoper;
-
 
    task body My_task is
       step : Integer := 2;
@@ -26,11 +35,13 @@ procedure Main is
       i : Integer := 0;
       id : integer;
       count : Integer := 0;
+      stop : Stoper;
    begin
       accept Start (id : in Integer) do
          My_task.id := id;
       end Start;
-      while can_stop loop
+      stop.Start_Stoper(10.0, id);
+      while Can_stop(id) loop
          sum := sum + i;
          count := count + 1;
          i := i + step;
@@ -42,8 +53,6 @@ procedure Main is
       end Finish;
    end My_task;
 
-
-   num_tasks : Integer := 4;
    A : Array(1..num_tasks) of My_task;
    id_array : Array(1..num_tasks) of integer;
    count_array : Array(1..num_tasks) of integer;
@@ -51,9 +60,12 @@ procedure Main is
 
 begin
 
+
    for i in A'Range loop
       A(i).Start(i);
    end loop;
+
+
 
    for i in A'Range loop
       A(i).Finish(id_array(i), sum_array(i), count_array(i));
